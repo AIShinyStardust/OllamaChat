@@ -1,3 +1,5 @@
+import os
+import time
 import ollama
 import datetime
 import json
@@ -35,3 +37,26 @@ class Chat:
     def getChatHistory(self) -> str:
         return self.chatHistory
     
+    def printToFile(self, folder:str = None):
+        logsFolder = "./logs"
+        os.makedirs(logsFolder, exist_ok=True)
+        if folder:
+            folderName = f"{folder}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+        else:
+            folderName = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        fullPath = os.path.join(logsFolder, folderName)
+        os.makedirs(fullPath, exist_ok=True)
+        print(f"Folder '{fullPath}' Created")
+        path = os.path.join(fullPath, "chat.log")
+        with open(path, "w") as archivo:
+            archivo.write(json.dumps(self.chatHistory, indent=2, ensure_ascii=False))
+        path = os.path.join(fullPath, "params.log")
+        with open(path, "w", encoding="utf-8") as archivo:
+            archivo.write(f"""Model:
+{self.model}
+Max chat lenght:
+{self.maxChatLenght}
+System prompt:
+{self.sysPrompt}
+""")
+        return
