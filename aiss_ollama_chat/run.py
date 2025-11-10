@@ -17,7 +17,7 @@ def main():
             print("Good bye!")
             break
         print(f"\n{MODEL}: {chat.doChat(prompt)}\n")
-    chat.printToFile("Chat1")
+    chat.printToFile()
     return
 
 if __name__ == "__main__":
