@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="aiss_ollama-chat",
+    name="aiss_ollama_chat",
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
@@ -9,7 +9,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "ollama-chat=run:main",
+            "ollama-chat=aiss_ollama_chat.run:main",
         ],
     },
     author="Miguel Ángel Cueto Gómez-Morán",
@@ -17,7 +17,7 @@ setup(
     description="Simple chatbot using Ollama",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/AIShinyStardust/ollamaChat",
+    url="https://github.com/AIShinyStardust/OllamaChat",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
