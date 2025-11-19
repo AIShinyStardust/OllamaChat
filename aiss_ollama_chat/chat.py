@@ -43,28 +43,28 @@ class Chat:
                 if prompt.startswith("save:"):
                     path = prompt[len("save:"):].strip()
                     self.serializeContext(path)
-                    return f"-- serialized to {path} --\n"
+                    return f"-- serialized to {path} --\n\n"
                 else:
                     self.serializeContext("./context.json")
-                    return "-- serialized to ./context.json --\n"
+                    return "-- serialized to ./context.json --\n\n"
             elif prompt.startswith("restore"):
                 if prompt.startswith("restore:"):
                     path = prompt[len("restore:"):].strip()
                     self.deserializeContext(path)
-                    return f"-- restored from {path} --\n"
+                    return f"-- restored from {path} --\n\n"
                 else:
                     self.deserializeContext("./context.json")
-                    return "-- restored from ./context.json --\n"
+                    return "-- restored from ./context.json --\n\n"
             elif prompt.startswith("rewind"):
                 if prompt.startswith("rewind:"):
                     ammount = int(prompt[len("rewind:"):].strip())
                     self.rewind(ammount)
-                    return f"-- rewind: {ammount} --\n"
+                    return f"-- rewind: {ammount} --\n\n"
                 else:
                     self.rewind()
-                    return "-- rewind: 1 --\n"
+                    return "-- rewind: 1 --\n\n"
             else:
-                return f"\n{self.model}: {self.doChat(prompt)}\n"
+                return f"{self.model}: {self.doChat(prompt)}\n\n"
         except Exception as e:
             raise Exception(f"{e}\n")
         return
