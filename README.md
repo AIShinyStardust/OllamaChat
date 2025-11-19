@@ -13,13 +13,14 @@ Allows to interact with local language models using Ollama. Conversation history
 - Support for multiple Ollama models
 - Exit commands (`quit` or `exit`)
   - When used, the app makes a backup at "./logs/date_time" located at run path.
-- Save and restore commands (`save`, `save:`, `restore`, `restore:`, `rewind` and `rewind:`)
+- Text commands (`save`, `save:`, `restore`, `restore:`, `rewind` and `rewind:`)
   - `save` - Stores a conversational context file named "context.json" at run path.
   - `save:` - Stores a conversational context file at path inidicated next, related to run path.
   - `restore` - Restores a conversational context file at "context.json" located at run path.
   - `restore:` - Restores a conversational context file at path inidicated next, related to run path.
   - `rewind` - Goes back to a previous turn.
   - `rewind:` - Goes back an ammount of turns indicated next.
+- Commands are avaliable at chat.py -> chat(prompt). Please use doChat(prompt) if you don't need commands.
 
 ## 🛠 Requirements
 
@@ -30,21 +31,20 @@ Allows to interact with local language models using Ollama. Conversation history
 
 ## 📦 Installation
 
-1. Clone the repository:
-   ```bash
-   git clone <your-repository>
-   cd ollamaChat
-   ```
-
-2. Create a virtual environment:
+1. Create a virtual environment:
    ```bash
    python -m venv .venv
    source .venv/bin/activate
    ```
 
+2. Clone the repository:
+   ```bash
+   git clone <your-repository>
+   ```
+
 3. Install package using:
    ```bash
-   pip install .
+   pip install ./OllamaChat
    ```
 
 ## ▶️ Usage

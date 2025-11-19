@@ -35,6 +35,40 @@ class Chat:
         self.chatHistory.append(self.strMsg("assistant", msg))
         return msg
     
+    def chat(self, prompt:str) -> str:
+        try:
+            if prompt in ["quit", "exit"]:
+                return None
+            elif prompt.startswith("save"):
+                if prompt.startswith("save:"):
+                    path = prompt[len("save:"):].strip()
+                    self.serializeContext(path)
+                    return f"-- serialized to {path} --\n"
+                else:
+                    self.serializeContext("./context.json")
+                    return "-- serialized to ./context.json --\n"
+            elif prompt.startswith("restore"):
+                if prompt.startswith("restore:"):
+                    path = prompt[len("restore:"):].strip()
+                    self.deserializeContext(path)
+                    return f"-- restored from {path} --\n"
+                else:
+                    self.deserializeContext("./context.json")
+                    return "-- restored from ./context.json --\n"
+            elif prompt.startswith("rewind"):
+                if prompt.startswith("rewind:"):
+                    ammount = int(prompt[len("rewind:"):].strip())
+                    self.rewind(ammount)
+                    return f"-- rewind: {ammount} --\n"
+                else:
+                    self.rewind()
+                    return "-- rewind: 1 --\n"
+            else:
+                return f"\n{self.model}: {self.doChat(prompt)}\n"
+        except Exception as e:
+            raise Exception(f"{e}\n")
+        return
+    
     def getChatHistory(self) -> str:
         return self.chatHistory
     
@@ -97,6 +131,7 @@ class Chat:
 
     def serializeParams(self, path):
         self._safeSerialize(path, {
+                "app":"aiss_ollama_chat",
                 "model":self.model,
                 "maxChatLength":self.maxChatLength,
                 "userName":self.userName,

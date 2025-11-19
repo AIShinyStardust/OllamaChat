@@ -8,8 +8,8 @@ from aiss_ollama_chat.chat import Chat
 
 def main():
     parser = argparse.ArgumentParser(
-        description='OpenAPI user-assistant chat app with tools support.',
-        epilog='Example: ollama-tools-chat gemma3:12b-it-q8_0 sysPrompt.txt 20'
+        description='OpenAPI user-assistant chat app.',
+        epilog='Example: ollama-chat gemma3:12b-it-q8_0 sysPrompt.txt 20'
     )
     
     parser.add_argument('model', help='Model to use')
@@ -27,26 +27,11 @@ def main():
     while True:
         prompt = input(f"{chat.userName}: ")
         try:
-            if prompt in ["quit", "exit"]:
+            msg = chat.chat(prompt)
+            if msg == None:
                 print("Good bye!")
                 break
-            elif prompt.startswith("save"):
-                if prompt.startswith("save:"):
-                    chat.serializeContext(prompt[len("save:"):].strip())
-                else:
-                    chat.serializeContext("./context.json")
-            elif prompt.startswith("restore"):
-                if prompt.startswith("restore:"):
-                    chat.deserializeContext(prompt[len("restore:"):].strip())
-                else:
-                    chat.deserializeContext("./context.json")
-            elif prompt.startswith("rewind"):
-                if prompt.startswith("rewind:"):
-                    chat.rewind(int(prompt[len("rewind:"):].strip()))
-                else:
-                    chat.rewind()
-            else:
-                print(f"\n{chat.model}: {chat.doChat(prompt)}\n")
+            print(msg)
         except Exception as e:
             print(f"{e}\n")
     chat.makeBackup()
