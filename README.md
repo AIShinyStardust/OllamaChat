@@ -47,6 +47,10 @@ Allows to interact with local language models using Ollama. Conversation history
    pip install ./OllamaChat
    ```
 
+## Optional
+
+pyperclip requires 
+
 ## ▶️ Usage
 
 Run the program with:

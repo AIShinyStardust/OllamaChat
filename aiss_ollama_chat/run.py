@@ -20,10 +20,12 @@ def main():
                     help='User name (default: "User")')
     parser.add_argument('--prevContext', '-c', type=str, default=None,
                     help='Txt file path with previous chat context (default: None)')
+    parser.add_argument('--addDateTimeToPrompt', '-t', type=str, default=False,
+                    help='Experimental feature. Add date and time to prompt, so the AI assistant can tell what time it is (default: False)')
 
     args = parser.parse_args()
 
-    chat = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.prevContext)
+    chat = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.prevContext, args.addDateTimeToPrompt)
     while True:
         prompt = input(f"{chat.userName}: ")
         try:
@@ -31,7 +33,7 @@ def main():
             if msg == None:
                 print("Good bye!")
                 break
-            print(msg)
+            print(f"\n\n{msg}")
         except Exception as e:
             print(f"{e}\n")
     chat.makeBackup()
