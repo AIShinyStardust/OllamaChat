@@ -11,9 +11,8 @@ Allows to interact with local language models using Ollama. Conversation history
 - Real-time interaction with local models
 - Conversation history saved in JSON format
 - Support for multiple Ollama models
-- Exit commands (`quit` or `exit`)
-  - When used, the app makes a backup at "./logs/date_time" located at run path.
-- Text commands (`save`, `save:`, `restore`, `restore:`, `rewind` and `rewind:`)
+- Start-of-prompt text commands:
+  - `exit` - Exits. When used, the app makes a backup at "./logs/date_time" located at run path.
   - `save` - Stores a conversational context file named "context.json" at run path.
   - `save:` - Stores a conversational context file at path inidicated next, related to run path.
   - `restore` - Restores a conversational context file at "context.json" located at run path.
@@ -22,11 +21,13 @@ Allows to interact with local language models using Ollama. Conversation history
   - `rewind:` - Goes back an ammount of turns indicated next.
   - `system` - Shows current system prompt.
   - `system:` - Replaces current system prompt with the one indicanted next.
-- Commands are avaliable at function chat.py -> chat(prompt). Please use doChat(prompt) if you don't need commands.
-- Flow control keyboard commands:
-  - `3x Cntrl+C` - Forces App exit.
-- Clipboard commands:
+- End-of-prompt text commands:
+  - `RETRY` - When used, allows to start the prompt again.
+- Other commands:
   - `@@` - It will be replaced with clipboard's contents.
+- Flow control keyboard shortcut commands:
+  - `3x Cntrl+C` - Forces App exit.
+- Commands are avaliable at function chat.py -> chat(prompt). Please use doChat(prompt) if you don't need commands.
 
 ## 🛠 Requirements
 

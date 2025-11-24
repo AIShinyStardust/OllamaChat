@@ -9,6 +9,16 @@ from aiss_ollama_chat.chat import Chat
 
 FORCE_EXIT:int = 3
 
+class OllamaChat:
+    def __init__(self):
+
+        return
+
+    def run(self):
+
+        return
+    
+
 def main():
     def signalHandler(sig, frame):
         global FORCE_EXIT
@@ -48,6 +58,8 @@ def main():
         FORCE_EXIT = 3
         prompt = input(f"{chat.userName}: ")
         try:
+            if prompt.endswith("RETRY"):
+                continue
             if prompt.startswith("exit"):
                 print("Good bye!")
                 break
