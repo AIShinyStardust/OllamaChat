@@ -4,6 +4,7 @@ import ollama
 import datetime
 import re
 import pyperclip
+
 from aiss_ollama_chat.fileIO import FileIO
 
 class Chat:
@@ -19,42 +20,43 @@ class Chat:
     @staticmethod
     def strMsg(event_type:str, content:str, addDateTimeToContent:bool=False) -> dict[str, str]:
         dateTime = datetime.datetime.now().isoformat()
-        if addDateTimeToContent:
-            return {
-                'timestamp': dateTime,
-                'role': event_type,
-                'content': f"{dateTime}\n{content}"
-            }
-        else:
-            return {
-                'timestamp': dateTime,
-                'role': event_type,
-                'content': content
-            }
+        return {
+            'timestamp': dateTime,
+            'role': event_type,
+            'content': f"{dateTime}\n{content}" if addDateTimeToContent else content
+        }
 
-    def __init__(self, model:str, sysPrompt1:str, maxChatLength:int=20, userName:str="user", prevContext:str=None, addDateTimeToPrompt:bool=False):
+    def __init__(self, model:str, sysPrompt:str, maxChatLength:int=20, userName:str="user", prevContext:str=None, addDateTimeToPrompt:bool=False, sysPromptDropTurn:int=None):
         self.model:str = model
-        self.userName:str = userName
-        self.chatHistory:dict[str, str] = []
         self.sysPrompt:str = ""
         self.maxChatLength:int = maxChatLength
+        self.userName:str = userName
         self.addDateTimeToPrompt:bool = addDateTimeToPrompt
+        self.sysPromptDropTurn:int = sysPromptDropTurn
+        self.chatHistory:dict[str, str] = []
         self.operations = {
             "save": self._handleSave,
             "restore": self._handleRestore,
-            "rewind": self._handleRewind
+            "rewind": self._handleRewind,
+            "system": self._handleSystem
         }
         try:
-            with open(sysPrompt1, "r") as archivo:
+            with open(sysPrompt, "r") as archivo:
                 self.sysPrompt = archivo.read()
             if prevContext:
-                FileIO.deserializeDict(prevContext)
+                self.chatHistory = FileIO.deserializeDict(prevContext)
         except Exception as e:
             return
     
     def doChat(self, prompt:str) -> str:
         self.chatHistory.append(self.strMsg("user", prompt, True and self.addDateTimeToPrompt))
-        response = ollama.chat(self.model, messages=[{"role": "system", "content": self.sysPrompt}] + self.chatHistory[-self.maxChatLength:])
+        if self.sysPromptDropTurn:
+            if len(self.chatHistory) < (2*self.sysPromptDropTurn):
+                response = ollama.chat(self.model, messages=[{"role": "system", "content": self.sysPrompt}] + self.chatHistory[-self.maxChatLength:])
+            else:
+                response = ollama.chat(self.model, messages=[{"role": "system", "content": " ... "}] + self.chatHistory[-self.maxChatLength:])
+        else:
+            response = ollama.chat(self.model, messages=[{"role": "system", "content": self.sysPrompt}] + self.chatHistory[-self.maxChatLength:])
         msg = response['message'].content
         self.chatHistory.append(self.strMsg("assistant", msg))
         return msg
@@ -95,6 +97,15 @@ class Chat:
         else:
             self.rewind()
             return "-- rewind: 1 --\n\n"
+        
+    def _handleSystem(self, prompt:str) -> str:
+        if prompt.startswith("system:"):
+            newSysPrompt = prompt[len("system:"):].strip()
+            message = f"-- System prompt changed --\n-- Old system prompt: {self.sysPrompt} --\n-- New system prompt: {newSysPrompt}\n\n"
+            self.sysPrompt = newSysPrompt
+            return message
+        else:
+            return f"-- System prompt: {self.sysPrompt}--\n\n"
     
     def rewind(self, turns=1) -> str:
         if turns < 0:

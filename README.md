@@ -20,6 +20,8 @@ Allows to interact with local language models using Ollama. Conversation history
   - `restore:` - Restores a conversational context file at path inidicated next, related to run path.
   - `rewind` - Goes back to a previous turn.
   - `rewind:` - Goes back an ammount of turns indicated next.
+  - `system` - Shows current system prompt.
+  - `system:` - Replaces current system prompt with the one indicanted next.
 - Commands are avaliable at function chat.py -> chat(prompt). Please use doChat(prompt) if you don't need commands.
 - Flow control keyboard commands:
   - `3x Cntrl+C` - Forces App exit.

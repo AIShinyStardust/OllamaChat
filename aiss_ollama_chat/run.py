@@ -7,7 +7,7 @@ import json
 
 from aiss_ollama_chat.chat import Chat
 
-FORCE_EXIT = 3
+FORCE_EXIT:int = 3
 
 def main():
     def signalHandler(sig, frame):
@@ -37,10 +37,12 @@ def main():
                     help='Txt file path with previous chat context (default: None)')
     parser.add_argument('--addDateTimeToPrompt', '-t', type=str, default=False,
                     help='Experimental feature. Add date and time to prompt, so the AI assistant can tell what time it is (default: False)')
+    parser.add_argument('--sysPromptDropTurn', '-d', type=int, default=None,
+                    help='Experimental feature. Add a turn count number where the model drops its system prompt (default: None)')
 
     args = parser.parse_args()
 
-    chat = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.prevContext, args.addDateTimeToPrompt)
+    chat = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.prevContext, args.addDateTimeToPrompt, args.sysPromptDropTurn)
     while True:
         global FORCE_EXIT
         FORCE_EXIT = 3
