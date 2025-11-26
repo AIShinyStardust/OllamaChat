@@ -38,7 +38,7 @@ class Chat:
             "save": self._handleSave,
             "restore": self._handleRestore,
             "rewind": self._handleRewind,
-            "system": self._handleSystem
+            "print": self._handlePrint
         }
         try:
             with open(sysPrompt, "r") as archivo:
@@ -98,20 +98,30 @@ class Chat:
             self.rewind()
             return "-- rewind: 1 --\n\n"
         
-    def _handleSystem(self, prompt:str) -> str:
-        if prompt.startswith("system:"):
-            newSysPrompt = prompt[len("system:"):].strip()
-            message = f"-- System prompt changed --\n-- Old system prompt: {self.sysPrompt} --\n-- New system prompt: {newSysPrompt}\n\n"
-            self.sysPrompt = newSysPrompt
-            return message
+    def _handlePrint(self, prompt:str) -> str:
+        if prompt.startswith("print:"):
+            prompt = prompt[len("print:"):].strip()
+            if prompt.startswith("system"):
+                return f"-- System prompt: {self.sysPrompt}\n\n"
+            elif prompt.startswith("chat"):
+                return f"-- Chat History --\n{self.getChatHistoryFormatted()}\n-- Chat History End --\n\n"
         else:
             return f"-- System prompt: {self.sysPrompt}--\n\n"
     
     def rewind(self, turns=1) -> str:
         if turns < 0:
             raise ValueError(f"Rewind parameter `turns` cannot be a negative value. Request: {turns}")
-        self.chatHistory = self.chatHistory[:-min(turns*2, len(self.chatHistory))]
+        self.chatHistory = self.chatHistory[:-min(self.parseTurnToIndex(turns), len(self.chatHistory))]
 
+    def parseTurnToIndex(self, t) -> int:
+        return t * 2
+
+    def parseIndextoTurn(self, i) -> int:
+        return i // 2
+
+    def getCurrentTurn(self) -> int:
+        return len(self.chatHistory) // 2
+    
     def getLastContextMsg(self):
         if len(self.chatHistory) == 0:
             return ""
@@ -122,7 +132,7 @@ class Chat:
         formattedStrings = []
         i = 0
         for dictionary in self.chatHistory:
-            turnNum = (i // 2) * 2
+            turnNum = self.parseIndextoTurn(i)
             role = dictionary.get("role", "")
             content = dictionary.get("content", "")
             if role == "user":
@@ -131,16 +141,16 @@ class Chat:
                 formattedString = f"Turn {turnNum} - {self.model}: {content}"
             formattedStrings.append(formattedString)
             i += 1
-        return "\n".join(formattedStrings)
+        return "\n\n".join(formattedStrings)
 
-    def makeBackup(self, folder:str = None):
+    def makeBackup(self, folder:str = None, suffix:str = ""):
         logsFolder = "./logs"
         os.makedirs(logsFolder, exist_ok=True)
         if folder:
             folderName = f"{folder}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
         else:
             folderName = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        fullPath = os.path.join(logsFolder, folderName)
+        fullPath = os.path.join(logsFolder, f"{folderName}{suffix}")
         os.makedirs(fullPath, exist_ok=True)
         print(f"Folder '{fullPath}' Created")
         FileIO.serializeDict(os.path.join(fullPath, "chat.json"), self.chatHistory)

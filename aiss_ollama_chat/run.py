@@ -53,6 +53,7 @@ def main():
     args = parser.parse_args()
 
     chat = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.prevContext, args.addDateTimeToPrompt, args.sysPromptDropTurn)
+    backupFolderSuffix = ""
     while True:
         global FORCE_EXIT
         FORCE_EXIT = 3
@@ -61,13 +62,18 @@ def main():
             if prompt.endswith("RETRY"):
                 continue
             if prompt.startswith("exit"):
-                print("Good bye!")
-                break
+                if prompt.startswith("exit:"):
+                    backupFolderSuffix = prompt[len("exit:"):].strip() # TODO: Set max num characters
+                    print("Good bye!")
+                    break
+                else:
+                    print("Good bye!")
+                    break
             prompt = chat.chat(prompt)
             print(f"\n\n{prompt}")
         except Exception as e:
             print(f"{e}\n")
-    chat.makeBackup()
+    chat.makeBackup(None, backupFolderSuffix)
     return
 
 if __name__ == "__main__":

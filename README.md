@@ -19,8 +19,9 @@ Allows to interact with local language models using Ollama. Conversation history
   - `restore:` - Restores a conversational context file at path inidicated next, related to run path.
   - `rewind` - Goes back to a previous turn.
   - `rewind:` - Goes back an ammount of turns indicated next.
-  - `system` - Shows current system prompt.
-  - `system:` - Replaces current system prompt with the one indicanted next.
+  - `print:` - Print various kind of info.
+    - `print:chat` - Prints full chat.
+    - `print:system` - Prints current system prompt.
 - End-of-prompt text commands:
   - `RETRY` - When used, allows to start the prompt again.
 - Other commands:
