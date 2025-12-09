@@ -18,19 +18,28 @@ class Chat:
         return out
     
     @staticmethod
-    def strMsg(event_type:str, content:str, addDateTimeToContent:bool=False) -> dict[str, str]:
+    def strMsg(event_type:str, content:str, turn:int, addDateTimeToContent:bool=False) -> dict[str, str]:
         dateTime = datetime.datetime.now().isoformat()
         return {
+            'turn': turn,
             'timestamp': dateTime,
             'role': event_type,
             'content': f"{dateTime}\n{content}" if addDateTimeToContent else content
         }
+    
+    @staticmethod
+    def strSys(content:str) -> dict[str, str]:
+        return {"role": "system", "content": content}
 
-    def __init__(self, model:str, sysPrompt:str, maxChatLength:int=20, userName:str="user", prevContext:str=None, addDateTimeToPrompt:bool=False, sysPromptDropTurn:int=None):
+    def __init__(self, model:str, sysPrompt:str, maxChatLength:int=20, userName:str="user", assistantName:str=None, prevContext:str=None, addDateTimeToPrompt:bool=False, sysPromptDropTurn:int=None):
         self.model:str = model
         self.sysPrompt:str = ""
         self.maxChatLength:int = maxChatLength
         self.userName:str = userName
+        if assistantName:
+            self.assistantName = assistantName
+        else:
+            self.assistantName = model
         self.addDateTimeToPrompt:bool = addDateTimeToPrompt
         self.sysPromptDropTurn:int = sysPromptDropTurn
         self.chatHistory:dict[str, str] = []
@@ -40,25 +49,33 @@ class Chat:
             "rewind": self._handleRewind,
             "print": self._handlePrint
         }
-        try:
-            with open(sysPrompt, "r") as archivo:
-                self.sysPrompt = archivo.read()
-            if prevContext:
+        if sysPrompt.endswith(".txt"):
+            try:
+                with open(sysPrompt, "r") as archivo:
+                    self.sysPrompt = archivo.read()
+            except Exception as e:
+                print(e)
+        else:
+            self.sysPrompt = sysPrompt
+        if prevContext:
+            try:
                 self.chatHistory = FileIO.deserializeDict(prevContext)
-        except Exception as e:
-            return
+            except Exception as e:
+                print(e)
+        
     
     def doChat(self, prompt:str) -> str:
-        self.chatHistory.append(self.strMsg("user", prompt, True and self.addDateTimeToPrompt))
+        turn = self.getLastContextTurn()+1
+        self.chatHistory.append(self.strMsg("user", prompt, turn, self.addDateTimeToPrompt))
         if self.sysPromptDropTurn:
-            if len(self.chatHistory) < (2*self.sysPromptDropTurn):
-                response = ollama.chat(self.model, messages=[{"role": "system", "content": self.sysPrompt}] + self.chatHistory[-self.maxChatLength:])
+            if turn > self.sysPromptDropTurn:
+                response = ollama.chat(self.model, messages=[Chat.strSys(self.sysPrompt)] + self.chatHistory[-self.maxChatLength:])
             else:
-                response = ollama.chat(self.model, messages=[{"role": "system", "content": " ... "}] + self.chatHistory[-self.maxChatLength:])
+                response = ollama.chat(self.model, messages=[Chat.strSys("...")] + self.chatHistory[-self.maxChatLength:])
         else:
-            response = ollama.chat(self.model, messages=[{"role": "system", "content": self.sysPrompt}] + self.chatHistory[-self.maxChatLength:])
+            response = ollama.chat(self.model, messages=[Chat.strSys(self.sysPrompt)] + self.chatHistory[-self.maxChatLength:])
         msg = response['message'].content
-        self.chatHistory.append(self.strMsg("assistant", msg))
+        self.chatHistory.append(self.strMsg("assistant", msg, turn))
         return msg
     
     def chat(self, prompt: str) -> str:
@@ -66,7 +83,7 @@ class Chat:
             for operation, handler in self.operations.items():
                 if prompt.startswith(operation):
                     return handler(prompt)
-            return f"{self.model}: {self.doChat(Chat.addClipBoardIfNeeded(prompt))}\n\n"
+            return f"{self.assistantName}: {self.doChat(Chat.addClipBoardIfNeeded(prompt))}\n\n"
         except Exception as e:
             raise Exception(f"{e}\\n")
         return
@@ -111,16 +128,21 @@ class Chat:
     def rewind(self, turns=1) -> str:
         if turns < 0:
             raise ValueError(f"Rewind parameter `turns` cannot be a negative value. Request: {turns}")
-        self.chatHistory = self.chatHistory[:-min(self.parseTurnToIndex(turns), len(self.chatHistory))]
+        if turns == 0 or len(self.chatHistory) == 0:
+            return
+        rewindTurnTarget = max(0, self.getLastContextTurn() - turns)
+        if (rewindTurnTarget == 0):
+            self.chatHistory = []
+            return
+        i = 0
+        while self.chatHistory[i]["turn"] <= rewindTurnTarget:
+            i += 1
+        self.chatHistory = self.chatHistory[:i]
 
-    def parseTurnToIndex(self, t) -> int:
-        return t * 2
-
-    def parseIndextoTurn(self, i) -> int:
-        return i // 2
-
-    def getCurrentTurn(self) -> int:
-        return len(self.chatHistory) // 2
+    def getLastContextTurn(self) -> int:
+        if len(self.chatHistory) == 0:
+            return 0
+        return self.chatHistory[-1]["turn"]
     
     def getLastContextMsg(self):
         if len(self.chatHistory) == 0:
@@ -132,13 +154,12 @@ class Chat:
         formattedStrings = []
         i = 0
         for dictionary in self.chatHistory:
-            turnNum = self.parseIndextoTurn(i)
             role = dictionary.get("role", "")
             content = dictionary.get("content", "")
             if role == "user":
-                formattedString = f"Turn {turnNum} - {self.userName}: {content}"
+                formattedString = f"Turn {dictionary.get('turn','')} - {self.userName}: {content}"
             else:
-                formattedString = f"Turn {turnNum} - {self.model}: {content}"
+                formattedString = f"Turn {dictionary.get('turn','')} - {self.model}: {content}"
             formattedStrings.append(formattedString)
             i += 1
         return "\n\n".join(formattedStrings)
@@ -157,8 +178,11 @@ class Chat:
         FileIO.serializeDict(os.path.join(fullPath, "params.log"), {
                 "app":"aiss_ollama_chat",
                 "model":self.model,
-                "maxChatLength":self.maxChatLength,
                 "userName":self.userName,
-                "sysPrompt":self.sysPrompt
+                "assistantName":self.assistantName,
+                "maxChatLength":self.maxChatLength,
+                "sysPrompt":self.sysPrompt,
+                "addedDateTimeToPrompt":self.addDateTimeToPrompt,
+                "sysPromptDropTurn":self.sysPromptDropTurn
             })
         return

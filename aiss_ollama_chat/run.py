@@ -6,8 +6,10 @@ import datetime
 import json
 
 from aiss_ollama_chat.chat import Chat
+from aiss_ollama_chat.fileIO import FileIO
 
 FORCE_EXIT:int = 3
+CHAT:Chat
 
 class OllamaChat:
     def __init__(self):
@@ -23,7 +25,9 @@ def main():
     def signalHandler(sig, frame):
         global FORCE_EXIT
         if FORCE_EXIT == 0:
+            global CHAT
             print("\n--FORCE EXIT--")
+            FileIO.serializeDict("./context.json.back", CHAT.chatHistory)
             sys.exit(0)
         else:
             print(f"\n--FORCE EXIT IN {FORCE_EXIT}--")
@@ -41,8 +45,10 @@ def main():
     parser.add_argument('sysPrompt', help='Plain text file with the system prompt')
     parser.add_argument('--maxLength', '-l', type=int, default=20,
                     help='Maximum context lenght (default: 20)')
-    parser.add_argument('--userName', '-u', type=str, default="User",
-                    help='User name (default: "User")')
+    parser.add_argument('--userName', '-u', type=str, default="user",
+                    help='User name (default: "user")')
+    parser.add_argument('--assistantName', '-an', type=str, default=None,
+                    help='Assistant name (for agentic purpouses) (default: "model_name")')
     parser.add_argument('--prevContext', '-c', type=str, default=None,
                     help='Txt file path with previous chat context (default: None)')
     parser.add_argument('--addDateTimeToPrompt', '-t', type=str, default=False,
@@ -52,12 +58,13 @@ def main():
 
     args = parser.parse_args()
 
-    chat = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.prevContext, args.addDateTimeToPrompt, args.sysPromptDropTurn)
+    global CHAT
+    CHAT = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.assistantName, args.prevContext, args.addDateTimeToPrompt, args.sysPromptDropTurn)
     backupFolderSuffix = ""
     while True:
         global FORCE_EXIT
         FORCE_EXIT = 3
-        prompt = input(f"{chat.userName}: ")
+        prompt = input(f"{CHAT.userName}: ")
         try:
             if prompt.endswith("RETRY"):
                 continue
@@ -69,11 +76,11 @@ def main():
                 else:
                     print("Good bye!")
                     break
-            prompt = chat.chat(prompt)
+            prompt = CHAT.chat(prompt)
             print(f"\n\n{prompt}")
         except Exception as e:
             print(f"{e}\n")
-    chat.makeBackup(None, backupFolderSuffix)
+    CHAT.makeBackup(None, backupFolderSuffix)
     return
 
 if __name__ == "__main__":
