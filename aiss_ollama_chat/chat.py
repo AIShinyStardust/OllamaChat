@@ -33,7 +33,7 @@ class Chat:
     def strSys(self, sysPrompt=None) -> dict[str, str]:
         return {"role": "system", "content": sysPrompt if sysPrompt else self.sysPrompt}
 
-    def __init__(self, model:str, sysPrompt:str, maxChatLength:int=20, userName:str="user", assistantName:str="assistant", prevContext:str=None, addTimestampToOllamaDict:bool=False, addTurnToOllamaDict:bool=False, addDateTimeToPrompt:bool=False, sysPromptDropTurn:int=None):
+    def __init__(self, model:str, sysPrompt:str, maxChatLength:int=0, userName:str="user", assistantName:str="assistant", prevContext:str=None, addTimestampToOllamaDict:bool=False, addTurnToOllamaDict:bool=False, addDateTimeToPrompt:bool=False, sysPromptDropTurn:int=0):
         self.model:str = model
         self.sysPrompt:str = ""
         if sysPrompt.endswith(".txt"):
@@ -47,6 +47,7 @@ class Chat:
         self.maxChatLength:int = maxChatLength
         self.userName:str = userName
         self.assistantName:str = assistantName
+        self.chatHistory:dict[str, str] = []
         if prevContext:
             try:
                 self.chatHistory = FileIO.deserializeDict(prevContext)
@@ -56,21 +57,25 @@ class Chat:
         self.addTurnToOllamaDict:bool = addTurnToOllamaDict
         self.addDateTimeToPrompt:bool = addDateTimeToPrompt
         self.sysPromptDropTurn:int = sysPromptDropTurn
-        self.chatHistory:dict[str, str] = []
         self.chatOperations = {
             "save": self._handleSave,
             "restore": self._handleRestore,
             "rewind": self._handleRewind,
-            "print": self._handlePrint
+            "print": self._handlePrint,
+            "delete": self._handleDelete
         }
         
     def doChat(self, prompt:str) -> str:
         turn = self.getLastContextTurn()+1 if self.addTurnToOllamaDict else None
         self.chatHistory.append(self.strMsg("user", prompt, turn))
-        if self.sysPromptDropTurn:
-            response = ollama.chat(self.model, messages=[self.strSys(self.strSys(self.sysPrompt) if turn > self.sysPromptDropTurn else "...")] + self.chatHistory[-self.maxChatLength:])
+        if self.sysPromptDropTurn > 0:
+            sysprompt = self.strSys(self.sysPrompt if turn > self.sysPromptDropTurn else "...")
         else:
-            response = ollama.chat(self.model, messages=[self.strSys(self.sysPrompt)] + self.chatHistory[-self.maxChatLength:])
+            sysprompt = self.strSys(self.sysPrompt)
+        if self.maxChatLength > 0:
+            response = ollama.chat(self.model, messages=[sysprompt] + self.chatHistory[-self.maxChatLength:])
+        else:
+            response = ollama.chat(self.model, messages=[sysprompt] + self.chatHistory)
         msg = response['message'].content
         self.chatHistory.append(self.strMsg("assistant", msg, turn))
         return msg
@@ -121,6 +126,11 @@ class Chat:
                 return f"-- Chat History --\n{self.getChatHistoryFormatted()}\n-- Chat History End --\n\n"
         else:
             return f"-- System prompt: {self.sysPrompt}--\n\n"
+        
+    def _handleDelete(self, prompt:str) -> str:
+        if prompt == "delete":
+            self.chatHistory = []
+            return "-- Chat context deleted --\n\n"
     
     def rewind(self, turns=1) -> str:
         if turns < 0:

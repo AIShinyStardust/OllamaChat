@@ -43,27 +43,28 @@ def main():
     
     parser.add_argument('model', help='Model to use')
     parser.add_argument('sysPrompt', help='Plain text file with the system prompt')
-    parser.add_argument('--maxLength', '-l', type=int, default=20,
-                    help='Maximum context lenght (default: 20)')
+    parser.add_argument('--maxLength', '-l', type=int, default=0,
+                    help='Maximum context lenght (default: 0)')
     parser.add_argument('--userName', '-u', type=str, default="user",
                     help='User name (default: "user")')
     parser.add_argument('--assistantName', '-g', type=str, default=None,
                     help='Assistant name (for agentic purpouses) (default: "model_name")')
     parser.add_argument('--prevContext', '-c', type=str, default=None,
                     help='Txt file path with previous chat context (default: None)')
-    parser.add_argument('--addDateTimeToPrompt', '-t', type=str, default="False",
-                    help='Experimental feature. Add date and time to prompt, so the AI assistant can tell what time it is (default: False)')
-    parser.add_argument('--sysPromptDropTurn', '-d', type=int, default=None,
-                    help='Experimental feature. Add a turn count number where the model drops its system prompt (default: None)')
+    parser.add_argument('--addDateTime', type=str, default="False",
+                    help='Experimental feature. (default: False)')
+    parser.add_argument('--addTimestampOllama', type=str, default="False",
+                    help='Experimental feature. (default: False)')
+    parser.add_argument('--addTurnOllama', type=str, default="False",
+                    help='Experimental feature. (default: False)')
+    parser.add_argument('--sysPromptDrop', type=int, default=0,
+                    help='Experimental feature. (default: 0) (example:2)')
 
     args = parser.parse_args()
-    if args.addDateTimeToPrompt == "True":
-        v1 = True
-    else:
-        v1 = False
 
     global CHAT
-    CHAT = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.assistantName, args.prevContext, v1, args.sysPromptDropTurn)
+    CHAT = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.assistantName, args.prevContext, (args.addTimestampOllama == "True"), (args.addTurnOllama == "True"), (args.addDateTime == "True"), args.sysPromptDrop)
+    
     backupFolderSuffix = ""
     while True:
         global FORCE_EXIT
