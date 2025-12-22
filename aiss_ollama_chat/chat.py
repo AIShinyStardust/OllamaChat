@@ -6,7 +6,8 @@ import re
 import pyperclip
 from typing import List
 
-from aiss_ollama_chat.fileIO import FileIO
+from aiss_file.file import FileIO
+from aiss_parameter_parser.parameter_parser import ParameterParser
 
 class Chat:
     @staticmethod
@@ -58,11 +59,11 @@ class Chat:
         self.addDateTimeToPrompt:bool = addDateTimeToPrompt
         self.sysPromptDropTurn:int = sysPromptDropTurn
         self.chatOperations = {
-            "save": self._handleSave,
-            "restore": self._handleRestore,
-            "rewind": self._handleRewind,
-            "print": self._handlePrint,
-            "delete": self._handleDelete
+            "_save": self._handleSave,
+            "_restore": self._handleRestore,
+            "_rewind": self._handleRewind,
+            "_print": self._handlePrint,
+            "_delete": self._handleDelete
         }
         
     def doChat(self, prompt:str) -> str:
@@ -82,35 +83,35 @@ class Chat:
     
     def chat(self, prompt: str) -> str:
         try:
-            for operation, handler in self.chatOperations.items():
-                if prompt.startswith(operation):
-                    return handler(prompt)
-            return f"{self.assistantName}: {self.doChat(Chat.addClipBoardIfNeeded(prompt))}\n\n"
-        except Exception as e:
-            raise Exception(f"{e}\\n")
-        return
+            parser = ParameterParser(prompt, [str,str])
+            op = parser.next()
+            params = parser.next()
+            return self.chatOperations[op](params)
+        except (ValueError, KeyError):
+            try:
+                return f"{self.assistantName}: {self.doChat(Chat.addClipBoardIfNeeded(prompt))}\n\n"
+            except Exception as e:
+                raise Exception(f"{e}\\n")
 
     def _handleSave(self, prompt: str) -> str:
-        if prompt.startswith("save:"):
-            path = prompt[len("save:"):].strip()
-            FileIO.serializeDict(path, self.chatHistory)
-            return f"-- serialized to {path} --\n\n"
+        if prompt != "":
+            FileIO.serializeDict(prompt, self.chatHistory)
+            return f"-- serialized to {prompt} --\n\n"
         else:
             FileIO.serializeDict("./context.json", self.chatHistory)
             return "-- serialized to ./context.json --\n\n"
 
     def _handleRestore(self, prompt: str) -> str:
-        if prompt.startswith("restore:"):
-            path = prompt[len("restore:"):].strip()
-            self.chatHistory = FileIO.deserializeDict(path)
-            return f"-- restored from {path} --\n\n"
+        if prompt != "":
+            self.chatHistory = FileIO.deserializeDict(prompt)
+            return f"-- restored from {prompt} --\n\n"
         else:
             self.chatHistory = FileIO.deserializeDict("./context.json")
             return "-- restored from ./context.json --\n\n"
 
     def _handleRewind(self, prompt: str) -> str:
-        if prompt.startswith("rewind:"):
-            amount = int(prompt[len("rewind:"):].strip())
+        if prompt != "":
+            amount = int(prompt)
             self.rewind(amount)
             return f"-- rewind: {amount} --\n\n"
         else:
@@ -118,19 +119,17 @@ class Chat:
             return "-- rewind: 1 --\n\n"
         
     def _handlePrint(self, prompt:str) -> str:
-        if prompt.startswith("print:"):
-            prompt = prompt[len("print:"):].strip()
+        if prompt != "":
             if prompt.startswith("system"):
                 return f"-- System prompt: {self.sysPrompt}\n\n"
             elif prompt.startswith("chat"):
                 return f"-- Chat History --\n{self.getChatHistoryFormatted()}\n-- Chat History End --\n\n"
         else:
-            return f"-- System prompt: {self.sysPrompt}--\n\n"
+            return f"-- Ollama Chat: {str(self._getParams())}--\n\n"
         
     def _handleDelete(self, prompt:str) -> str:
-        if prompt == "delete":
-            self.chatHistory = []
-            return "-- Chat context deleted --\n\n"
+        self.chatHistory = []
+        return "-- Chat context deleted --\n\n"
     
     def rewind(self, turns=1) -> str:
         if turns < 0:
@@ -205,7 +204,10 @@ class Chat:
         os.makedirs(fullPath, exist_ok=True)
         print(f"Folder '{fullPath}' Created")
         FileIO.serializeDict(os.path.join(fullPath, "chat.json"), self.chatHistory)
-        FileIO.serializeDict(os.path.join(fullPath, "params.log"), {
+        FileIO.serializeDict(os.path.join(fullPath, "params.log"), self._getParams())
+
+    def _getParams(self):
+        return {
                 "app":"aiss_ollama_chat",
                 "model":self.model,
                 "userName":self.userName,
@@ -216,4 +218,4 @@ class Chat:
                 "addTurnToOllamaDict":self.addTurnToOllamaDict,
                 "addedDateTimeToPrompt":self.addDateTimeToPrompt,
                 "sysPromptDropTurn":self.sysPromptDropTurn
-            })
+            }

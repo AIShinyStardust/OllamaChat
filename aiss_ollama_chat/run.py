@@ -65,7 +65,7 @@ def main():
     global CHAT
     CHAT = Chat(args.model, args.sysPrompt, args.maxLength, args.userName, args.assistantName, args.prevContext, (args.addTimestampOllama == "True"), (args.addTurnOllama == "True"), (args.addDateTime == "True"), args.sysPromptDrop)
     
-    backupFolderSuffix = ""
+    folderName = ""
     while True:
         global FORCE_EXIT
         FORCE_EXIT = 3
@@ -74,8 +74,8 @@ def main():
             if prompt.endswith("RETRY"):
                 continue
             if prompt.startswith("exit"):
-                if prompt.startswith("exit:"):
-                    backupFolderSuffix = prompt[len("exit:"):].strip() # TODO: Set max num characters
+                if prompt.startswith("exit "):
+                    folderName = prompt[len("exit "):].strip()
                     print("Good bye!")
                     break
                 else:
@@ -85,7 +85,7 @@ def main():
             print(f"\n\n{prompt}")
         except Exception as e:
             print(f"{e}\n")
-    CHAT.makeBackup(None, backupFolderSuffix)
+    CHAT.makeBackup(None, folderName)
     return
 
 if __name__ == "__main__":

@@ -13,15 +13,15 @@ Allows to interact with local language models using Ollama. Conversation history
 - Support for multiple Ollama models
 - Start-of-prompt text commands:
   - `exit` - Exits. When used, the app makes a backup at "./logs/date_time" located at run path.
-  - `save` - Stores a conversational context file named "context.json" at run path.
-  - `save:` - Stores a conversational context file at path inidicated next, related to run path.
-  - `restore` - Restores a conversational context file at "context.json" located at run path.
-  - `restore:` - Restores a conversational context file at path inidicated next, related to run path.
-  - `rewind` - Goes back to a previous turn.
-  - `rewind:` - Goes back an ammount of turns indicated next.
-  - `print:` - Print various kind of info.
-    - `print:chat` - Prints full chat.
-    - `print:system` - Prints current system prompt.
+  - `_save` - Stores a conversational context file named "context.json" at run path.
+  - `_save [STR]` - Stores a conversational context file at path inidicated next, related to run path.
+  - `_restore` - Restores a conversational context file at "context.json" located at run path.
+  - `_restore [STR]` - Restores a conversational context file at path inidicated next, related to run path.
+  - `_rewind` - Goes back to a previous turn.
+  - `_rewind [INT]` - Goes back an ammount of turns indicated next.
+  - `_print [STR]` - Print various kind of info.
+    - `_print chat` - Prints full chat.
+    - `_print system` - Prints current system prompt.
 - End-of-prompt text commands:
   - `RETRY` - When used, allows to start the prompt again.
 - Other commands:

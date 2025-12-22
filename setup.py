@@ -2,10 +2,13 @@ from setuptools import setup, find_packages
 
 setup(
     name="aiss_ollama_chat",
-    version="0.4.0",
+    version="0.5.0",
     packages=find_packages(),
     install_requires=[
-        "ollama"
+        "ollama",
+        "pyperclip",
+        "aiss_file @ git+https://github.com/MiguelAngelCGM/File",
+        "aiss_parameter_parser @ git+https://github.com/MiguelAngelCGM/ParameterParser"
     ],
     entry_points={
         "console_scripts": [

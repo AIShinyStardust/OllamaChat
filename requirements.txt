@@ -1,2 +1,4 @@
 ollama
 pyperclip
+aiss_file @ git+https://github.com/MiguelAngelCGM/File
+aiss_parameter_parser @ git+https://github.com/MiguelAngelCGM/ParameterParser
